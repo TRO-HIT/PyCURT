@@ -3,3 +3,4 @@
 *.*egg*.*
 build/
 PyCURT.egg-info/
+dist/
