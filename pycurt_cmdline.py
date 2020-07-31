@@ -46,9 +46,7 @@ if __name__ == "__main__":
 
     BASE_DIR = ARGS.input_dir
 
-    sub_list, BASE_DIR = create_subject_list(BASE_DIR, ARGS.xnat_source,
-                                             ARGS.cluster_source,
-                                             subjects_to_process=[])
+    sub_list, BASE_DIR = create_subject_list(BASE_DIR, subjects_to_process=[])
 
     if ARGS.data_sorting:
         if not ARGS.no_mrclass:

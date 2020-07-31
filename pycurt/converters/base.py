@@ -1,4 +1,4 @@
-from basecore.utils.filemanip import split_filename
+from pycurt.utils.filemanip import split_filename
 
 class BaseConverter(object):
     

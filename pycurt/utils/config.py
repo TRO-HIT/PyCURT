@@ -3,7 +3,8 @@ import glob
 from pycurt.utils.utils import get_files, untar
 
 
-def download_mrclass_weights(weights_dir=None, url=''):
+def download_mrclass_weights(weights_dir=None,
+                             url=('http://www.oncoexpress.de/software/pycurt/network_weights/mrclass/mrclass_weights.tar.gz')):
 
     if weights_dir is None:
         home = os.path.expanduser("~")

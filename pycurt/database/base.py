@@ -55,6 +55,13 @@ class BaseDatabase():
             ext = ''
         sequences = [x for x in sequences if x in POSSIBLE_SEQUENCES]
 #         sequences = list(set([x for y in POSSIBLE_SEQUENCES for x in sequences if y in x]))
+        self.session_names = {}
+        for seq in sequences:
+            sess = [x for x in sessions
+                    for y in sorted(os.listdir(os.path.join(base_dir, sub_id, x)))
+                    if y.lower() == seq]
+            self.session_names[seq] = sess
+
         if 'ct1' in sequences:
             ref_sequence = 'ct1'
         elif 't1km' in sequences:

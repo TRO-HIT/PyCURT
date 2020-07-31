@@ -62,6 +62,8 @@ def check_rts(rts, regex):
 def get_files(url, location, file, ext='.tar.gz'):
 
     if not os.path.isfile(os.path.join(location, file+ext)):
+        if not os.path.isdir(os.path.join(location)):
+            os.makedirs(os.path.join(location))
         r = requests.get(url)
         with open(os.path.join(location, file+ext), 'wb') as f:
             f.write(r.content)

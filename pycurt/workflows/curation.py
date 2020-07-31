@@ -77,7 +77,6 @@ class DataCuration(BaseWorkflow):
         t10 = self.t10
         sub_id = self.sub_id
         result_dir = self.result_dir
-        sessions = self.sessions
         nipype_cache = self.nipype_cache
         sequences = self.sequences
         reference = self.reference
@@ -141,7 +140,7 @@ class DataCuration(BaseWorkflow):
                 else:
                     workflow.connect(check, 'out_file', datasink,
                                      'results.subid.@{}_converted'.format(seq))
-                    for i, session in enumerate(sessions):
+                    for i, session in enumerate(self.session_names[seq]):
                         substitutions += [(('_converter{0}{1}/'.format(seq, i), session+'/'))]
             else:
                 if seq != 'rtstruct':
