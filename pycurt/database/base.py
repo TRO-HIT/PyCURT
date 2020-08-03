@@ -3,6 +3,8 @@ import glob
 import nipype
 from nipype.interfaces.utility import Split
 from pycurt.utils.utils import check_dcm_dose
+from pycurt.database.local import LocalDatabase
+from pycurt.database.utils import check_cache
 
 
 POSSIBLE_SEQUENCES = ['t1', 'ct1', 't1km', 't2', 'flair', 'adc', 'swi']
@@ -10,7 +12,9 @@ POSSIBLE_SEQUENCES = ['t1', 'ct1', 't1km', 't2', 'flair', 'adc', 'swi']
 
 class BaseDatabase():
 
-    def __init__(self, sub_id, input_dir, work_dir, process_rt=False):
+    def __init__(self, sub_id, input_dir, work_dir, process_rt=False,
+                 local_source=False, local_sink=False, local_project_id=None,
+                 local_basedir=''):
 
         self.sub_id = sub_id
         self.base_dir = input_dir
@@ -19,6 +23,13 @@ class BaseDatabase():
         self.result_dir = os.path.join(work_dir, 'workflows_output')
         self.workflow_name = self.__class__.__name__
         self.outdir = os.path.join(self.result_dir, self.workflow_name)
+        self.input_needed = []
+        self.local_sink = local_sink
+        self.local_source = local_source
+        if local_source or local_sink:
+            self.local = LocalDatabase(
+                project_id=local_project_id, 
+                local_basedir=local_basedir)
     
     def database(self):
         
@@ -59,7 +70,7 @@ class BaseDatabase():
         for seq in sequences:
             sess = [x for x in sessions
                     for y in sorted(os.listdir(os.path.join(base_dir, sub_id, x)))
-                    if y.lower() == seq]
+                    if y.lower() == seq+ext]
             self.session_names[seq] = sess
 
         if 'ct1' in sequences:
@@ -68,11 +79,13 @@ class BaseDatabase():
             ref_sequence = 't1km'
         elif 't1' in sequences:
             ref_sequence = 't1'
-        elif ext == '':
-            ref_sequence = []
         else:
-            raise Exception('Nor T1 neither T1KM were found in {}. You need at least one of them '
-                            'in order to perform registration.'.format(sub_id))
+            ref_sequence = []
+#         elif ext == '':
+#             ref_sequence = []
+#         else:
+#             raise Exception('Nor T1 neither T1KM were found in {}. You need at least one of them '
+#                             'in order to perform registration.'.format(sub_id))
         self.add_subfolder = False
         if ext == '' and sessions:
             dcms = [y for x in sessions for y in glob.glob(os.path.join(base_dir, sub_id, x, '*/*.dcm'))
@@ -323,3 +336,24 @@ class BaseDatabase():
             workflow.connect(datasource, 'rt', workflow_datasink,
                              'results.subid.@rt')
         return workflow
+    
+    def local_datasource(self):
+        
+        skip_sessions = check_cache(self.sessions, self.input_needed,
+                                    self.sub_id, self.base_dir)
+        
+        if [x for x in self.sessions if x not in skip_sessions]:
+            self.local.get(self.base_dir, subjects=[self.sub_id],
+                             needed_scans=self.input_needed,
+                             skip_sessions=skip_sessions)
+
+    def local_datasink(self):
+
+        sub_folder = os.path.join(self.outdir, self.sub_id)
+        if os.path.isdir(sub_folder):
+            sessions = [x for x in sorted(os.listdir(sub_folder))
+                        if os.path.isdir(os.path.join(sub_folder, x))]
+            
+            self.local.put(sessions, sub_folder)
+        else:
+            print('Nothing to copy for subject {}'.format(self.sub_id))

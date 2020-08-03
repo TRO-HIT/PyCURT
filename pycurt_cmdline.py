@@ -2,6 +2,7 @@
 import os
 import argparse
 from pycurt.workflows.curation import DataCuration
+from pycurt.workflows.rt import RadioTherapy
 from pycurt.utils.config import create_subject_list, download_mrclass_weights
 
 
@@ -41,6 +42,22 @@ if __name__ == "__main__":
                               'session1/image.dcm, will be 3 (or -3, remember that in Python'
                               ' numbering starts from 0). By default, is the third'
                               ' position starting from the end of the path.'))
+    PARSER.add_argument('--extract-rts', action='store_true', 
+                        help='Whether or not to extract structures from the RT structure'
+                           ' set. Default is False.')
+    PARSER.add_argument('--local-sink', action='store_true', 
+                        help=('Whether or not to save all the results in a common database. '
+                              'If you enable this, the outputs from all the different workflows '
+                              'will be saved in one folder, keeping track of what is added '
+                              'every time to avoid recalculation. If this is enabled, '
+                              '--local-basedir and --local-project-id have to be supplied.'
+                              'Default is False.'))
+    PARSER.add_argument('--local-project-id', '-lpid', type=str,
+                        help=('Local project ID. Name of the project that will be created in '
+                              '--local-basedir when --local-sink is selected'))
+    PARSER.add_argument('--local-basedir', '-lbd', type=str,
+                        help=('Path where to create the local database, if --local-sink is '
+                              'selected'))
 
     ARGS = PARSER.parse_args()
 
@@ -68,13 +85,22 @@ if __name__ == "__main__":
 
     if not ARGS.no_data_curation:
         for sub_id in sub_list:
-    
             print('Processing subject {}'.format(sub_id))
     
             workflow = DataCuration(
                 sub_id=sub_id, input_dir=BASE_DIR, work_dir=ARGS.work_dir,
-                process_rt=True)
+                process_rt=True, local_basedir=ARGS.local_basedir,
+                local_project_id=ARGS.local_project_id, local_sink=ARGS.local_sink)
             wf = workflow.workflow_setup()
             workflow.runner(wf, cores=ARGS.num_cores)
+            if ARGS.extract_rts:
+                wd = os.path.join(ARGS.work_dir, 'workflows_output', 'DataCuration')
+                workflow = RadioTherapy(
+                    sub_id=sub_id, input_dir=wd, work_dir=ARGS.work_dir,
+                    process_rt=True, roi_selection=False,
+                    local_basedir=ARGS.local_basedir,
+                    local_project_id=ARGS.local_project_id, local_sink=ARGS.local_sink)
+                wf = workflow.workflow_setup()
+                workflow.runner(wf, cores=ARGS.num_cores)
 
     print('Done!')

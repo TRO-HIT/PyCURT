@@ -17,6 +17,7 @@ from collections import defaultdict
 from nipype.interfaces.base import isdefined
 from pycurt.converters.dicom import DicomConverter
 from . import logging
+import SimpleITK as sitk
 
 
 iflogger = logging.getLogger('nipype.interface')
@@ -483,9 +484,6 @@ class FileCheck(BaseInterface):
                         scan_dates[key].append('Corrupted')
                     z += 1
         names = [patient_names[x][0] for x in patient_names.keys()]
-        scans_tot = []
-        pn_tot = []
-        sd_tot = []
         for s in set(names):
             temp_scan = {}
             temp_pn = {}
@@ -496,12 +494,8 @@ class FileCheck(BaseInterface):
                     temp_pn[key] = patient_names[key]
                     temp_sd[key] = scan_dates[key]
             out_list.append([temp_scan, temp_pn, temp_sd])
-#             scans_tot.append(temp_scan)
-#             pn_tot.append(temp_pn)
-#             sd_tot.append(temp_sd)
+
         self.out_list = out_list
-#         self.out_list = [scans, patient_names, scan_dates]
-#         self.out_list = [scans_tot, pn_tot, sd_tot]
 
         return runtime
 
@@ -516,128 +510,7 @@ class FileCheck(BaseInterface):
 
         return outputs
 
-# class CreateSubjectsListInputSpec(BaseInterfaceInputSpec):
-# 
-#     input_dir = Directory(exists=True, desc='Input directory to prepare properly.')
-# 
-# 
-# class CreateSubjectsListOutputSpec(TraitedSpec):
-#     
-#     file_list = traits.List()
-# 
-# 
-# class CreateSubjectsList(BaseInterface):
-# 
-#     input_spec = CreateSubjectsListInputSpec
-#     output_spec = CreateSubjectsListOutputSpec
-#     
-#     def _run_interface(self, runtime):
-#         input_dir = self.inputs.input_dir
-#         file_list = []
-#         for path, _, files in os.walk(input_dir):
-#             for f in files:
-#                 if '.dcm' in f:
-#                     file_list.append(os.path.join(path, f))
-#         self.file_list = file_list
-#         
-#         return runtime
-#     
-#     def _list_outputs(self):
-#         outputs = self._outputs().get()
-#         outputs['file_list'] = self.file_list
-# 
-#         return outputs
-# 
-# 
-# class FileCheckInputSpec(BaseInterfaceInputSpec):
-#     
-#     input_file = File(exists=True, desc='Input file to check.')
-#     renaming = traits.Bool(False, desc='Whether or not to use the information stored'
-#                            'in the DICOM header to rename the subject and sessions '
-#                            'folders. If False, the file path will be splitted '
-#                            'and the subject name will be taken from there. In this '
-#                            'case, the subject_name_position must be provided.'
-#                            'Default is False.', usedefault=True)
-#     subject_name_position = traits.Int(
-#         -3, usedefault=True, desc='The position of the subject name in the splitted '
-#         'file path (file_path.split("/")). Default is -3, so it assumes that the subject '
-#         'name is in the third position starting from the end of the file path.')
-# 
-# 
-# class FileCheckOutputSpec(TraitedSpec):
-#     
-#     out_list = traits.List(desc='Prepared folder.')
-# 
-# 
-# class FileCheck(BaseInterface):
-#     
-#     input_spec = FileCheckInputSpec
-#     output_spec = FileCheckOutputSpec
-#     
-#     def _run_interface(self, runtime):
-#         
-#         filename = self.inputs.input_file
-#         renaming = self.inputs.renaming
-#         if not renaming:
-#             sub_name_position = self.inputs.subject_name_position
-# 
-#         scans = defaultdict(list)
-#         patient_names = defaultdict(list)
-#         scan_dates = defaultdict(list)
-# 
-#         try:
-#             ds = pydicom.dcmread(filename,force = True)
-#         except:
-#             print('{} could not be read, dicom '
-#                   'file may be corrupted'.format(filename))
-#         try:
-#             seriesDescription=ds.SeriesDescription.upper().replace('_','')
-#         except:
-#             try:
-#                 seriesDescription=ds.Modality.upper().replace('_','')
-#             except:
-#                 seriesDescription='NONE'
-#         try:
-#             studyInstance = ds.StudyInstanceUID
-#         except:
-#             studyInstance='NONE'
-#         try:
-#             seriesInstance = ds.SeriesInstanceUID
-#         except:
-#             seriesInstance='NONE'
-#         key = seriesDescription +'_' + seriesInstance + '_' + studyInstance
-#         key = self.strip_non_ascii(re.sub(r'[^\w]', '', key))
-#         key = key.replace('_','-')
-#         scans[key].append(filename)
-#         if renaming:
-#             try:
-#                 patient_names[key].append(ds.PatientID)
-#             except AttributeError:
-#                 print('No patient ID for {}'.format(filename))
-#                 patient_names[key].append('Corrupted')
-#         else:
-#             sub_name = filename.split('/')[sub_name_position]
-#             patient_names[key].append(sub_name)
-#         try:
-#             scan_dates[key].append(ds.StudyDate)
-#         except:
-#             print('No study date for {}'.format(filename))
-#             scan_dates[key].append('Corrupted')
-# 
-#         self.out_list = [scans, patient_names, scan_dates]
-# 
-#         return runtime
-# 
-#     def strip_non_ascii(self, string):
-#         ''' Returns the string without non ASCII characters'''
-#         stripped = (c for c in string if 0 < ord(c) < 127)
-#         return ''.join(stripped)
-# 
-#     def _list_outputs(self):
-#         outputs = self._outputs().get()
-#         outputs['out_list'] = self.out_list
-# 
-#         return outputs
+
 
 
 class FolderPreparationInputSpec(BaseInterfaceInputSpec):
@@ -648,8 +521,7 @@ class FolderPreparationInputSpec(BaseInterfaceInputSpec):
 
 
 class FolderPreparationOutputSpec(TraitedSpec):
-    
-#     out_folder = traits.List(desc='Prepared folder.')
+
     out_folder = Directory(exists=True, desc='Prepared folder.')
 
 
@@ -666,16 +538,6 @@ class FolderPreparation(BaseInterface):
         scans = input_list[0]
         patient_names = input_list[1]
         scan_dates = input_list[2]
-#         scans = defaultdict(list)
-#         patient_names = defaultdict(list)
-#         scan_dates = defaultdict(list)
-#         
-#         for el in input_list:
-#             key = list(el[0].keys())[0]
-#             scans[key].append(el[0][key][0])
-#             patient_names[key].append(el[1][key][0])
-#             scan_dates[key].append(el[2][key][0])
-
         for key in scans.keys():
             for file in scans[key]:
                 out_basename = os.path.join(patient_names[key][0],
@@ -697,9 +559,6 @@ class FolderPreparation(BaseInterface):
         if isdefined(self.inputs.out_folder):
             outputs['out_folder'] = os.path.abspath(
                 self.inputs.out_folder)
-#         if isdefined(self.inputs.out_folder):
-#             outputs['out_folder'] = sorted(glob.glob(os.path.abspath(
-#                 self.inputs.out_folder+'/*')))
 
         return outputs
 
@@ -847,5 +706,48 @@ class FolderMerge(BaseInterface):
         if isdefined(self.inputs.out_folder):
             outputs['out_folder'] = os.path.abspath(
                 self.inputs.out_folder)
+
+        return outputs
+
+
+class MHA2NIIConverterInputSpec(BaseInterfaceInputSpec):
+    
+    input_folder = Directory(help='Input directory to convert.')
+    out_folder = Directory('Nifti_Data', usedefault=True,
+                           desc='Folder with converted data.')
+
+
+class MHA2NIIConverterOutputSpec(TraitedSpec):
+    
+    out_folder = Directory(help='Folder with converted data.')
+    out_files = traits.List(help='List of converted files.')
+
+
+class MHA2NIIConverter(BaseInterface):
+    
+    input_spec = MHA2NIIConverterInputSpec
+    output_spec = MHA2NIIConverterOutputSpec
+    
+    def _run_interface(self, runtime):
+        
+        toconvert = sorted(glob.glob(
+            os.path.join(self.inputs.input_folder, '*.mha')))
+        self.converted_files = []
+        if toconvert:
+            for mha in toconvert:
+                filename = mha.split('/')[-1].split('.mha')[0]
+                outfile = filename+'.nii.gz'
+                mha_file = sitk.ReadImage(mha)
+                sitk.WriteImage(mha_file, outfile)
+                self.converted_files.append(os.path.abspath(outfile))
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        if isdefined(self.inputs.out_folder):
+            outputs['out_folder'] = os.path.abspath(
+                self.inputs.out_folder)
+        outputs['out_files'] = self.converted_files
 
         return outputs

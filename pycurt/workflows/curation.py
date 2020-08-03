@@ -5,7 +5,7 @@ from pycurt.interfaces.utils import DicomCheck, ConversionCheck, GetRefRTDose,\
 from nipype.interfaces.dcm2nii import Dcm2niix
 from pycurt.interfaces.plastimatch import DoseConverter
 from pycurt.workflows.base import BaseWorkflow
-from pycurt.interfaces.utils import FolderPreparation, FolderSorting
+from pycurt.interfaces.utils import FolderPreparation, FolderSorting, CheckRTStructures
 from pycurt.interfaces.custom import RTDataSorting, MRClass
 from nipype.interfaces.utility import Merge
 
@@ -213,12 +213,14 @@ class DataCuration(BaseWorkflow):
         return workflow
 
     def workflow_setup(self, data_sorting=False, subject_name_position=-3,
-                       renaming=False, mr_classiffication=True):
+                       renaming=False, mr_classiffication=True, checkpoints=None,
+                       sub_checkpoints=None):
 
         if data_sorting:
             workflow = self.sorting_workflow(
                 subject_name_position=subject_name_position,
-                renaming=renaming, mr_classiffication=mr_classiffication)
+                renaming=renaming, mr_classiffication=mr_classiffication,
+                checkpoints=checkpoints, sub_checkpoints=sub_checkpoints)
 #             sorting_workflow.run()
         else:
             workflow = self.convertion_workflow()

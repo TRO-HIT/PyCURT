@@ -6,6 +6,9 @@ class BaseWorkflow(BaseDatabase):
 
         self.database()
         self.data_source = self.create_datasource()
+        
+        if self.local_source:
+            self.local_source()
 
     def workflow(self):
         raise NotImplementedError
@@ -21,4 +24,6 @@ class BaseWorkflow(BaseDatabase):
         else:
             print('Workflow will run in parallel using {} cores'.format(cores))
             workflow.run(plugin='MultiProc', plugin_args={'n_procs' : cores})
-    
+
+        if self.local_sink:
+            self.local_datasink()
