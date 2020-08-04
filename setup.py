@@ -25,6 +25,9 @@ setup(name='PyCURT',
       'SimpleITK==1.2.4',
       'nipype'],
       dependency_links=['git+https://github.com/TRO-HIT/nipype.git@c453eac5d7efdd4e19a9bcc8a7f3d800026cc125#egg=nipype-9876543210'],
+      entry_points={
+          'console_scripts': ['pycurt_gui = scripts.pycurt_gui:main',
+			      'pycurt = scripts.pycurt_cmdline:main']},
       packages=find_packages(exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
       classifiers=[
           'Intended Audience :: Science/Research',

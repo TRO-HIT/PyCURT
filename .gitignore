@@ -4,3 +4,4 @@
 build/
 PyCURT.egg-info/
 dist/
+src/

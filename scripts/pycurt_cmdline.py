@@ -6,7 +6,7 @@ from pycurt.workflows.rt import RadioTherapy
 from pycurt.utils.config import create_subject_list, download_mrclass_weights
 
 
-if __name__ == "__main__":
+def main():
 
     PARSER = argparse.ArgumentParser()
     
@@ -104,3 +104,6 @@ if __name__ == "__main__":
                 workflow.runner(wf, cores=ARGS.num_cores)
 
     print('Done!')
+
+if __name__ == "__main__":
+    main()
