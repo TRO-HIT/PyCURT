@@ -92,7 +92,8 @@ def main():
                 process_rt=True, local_basedir=ARGS.local_basedir,
                 local_project_id=ARGS.local_project_id, local_sink=ARGS.local_sink)
             wf = workflow.workflow_setup()
-            workflow.runner(wf, cores=ARGS.num_cores)
+            if wf.list_node_names():
+                workflow.runner(wf, cores=ARGS.num_cores)
             if ARGS.extract_rts:
                 wd = os.path.join(ARGS.work_dir, 'workflows_output', 'DataCuration')
                 workflow = RadioTherapy(
@@ -101,7 +102,8 @@ def main():
                     local_basedir=ARGS.local_basedir,
                     local_project_id=ARGS.local_project_id, local_sink=ARGS.local_sink)
                 wf = workflow.workflow_setup()
-                workflow.runner(wf, cores=ARGS.num_cores)
+                if wf.list_node_names():
+                    workflow.runner(wf, cores=ARGS.num_cores)
 
     print('Done!')
 

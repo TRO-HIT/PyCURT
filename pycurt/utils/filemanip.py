@@ -184,6 +184,10 @@ def create_move_toDir(fileName, dirName, actRange):
         f = [item for item in os.listdir(dirName) if '1-' in item]
         if len(f) > 1:
             [f.remove(x) for x in f if len(x.split('-')) != 3]
+        if len(f) > 1:
+            for ff in f[1:]:
+                if os.path.isfile(ff):
+                    os.remove(ff)
         indices3 = [i for i, x in enumerate(f[0]) if x == "-"]
         actRange_f = float(f[0][indices3[-1]+1:])
 #         actRange_f = sorted([float(x[indices3[-1]+1:]) for x in f])[0]

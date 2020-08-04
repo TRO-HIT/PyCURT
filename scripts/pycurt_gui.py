@@ -42,16 +42,19 @@ def main():
                 process_rt=True, local_basedir=values['db_path'],
                 local_project_id=values['db_pid'], local_sink=values['local_db'])
             wf = workflow.workflow_setup()
-            workflow.runner(wf, cores=int(values['cores']))
+            if wf.list_node_names():
+                workflow.runner(wf, cores=int(values['cores']))
             if values['extract_rts']:
                 wd = os.path.join(values['work_dir'], 'workflows_output', 'DataCuration')
-                workflow = RadioTherapy(
-                    sub_id=sub_id, input_dir=wd, work_dir=values['work_dir'],
-                    process_rt=True, roi_selection=False,
-                    local_basedir=values['db_path'],
-                    local_project_id=values['db_pid'], local_sink=values['local_db'])
-                wf = workflow.workflow_setup()
-                workflow.runner(wf, cores=int(values['cores']))
+                if os.path.isdir(os.path.join(wd, sub_id)):
+                    workflow = RadioTherapy(
+                        sub_id=sub_id, input_dir=wd, work_dir=values['work_dir'],
+                        process_rt=True, roi_selection=False,
+                        local_basedir=values['db_path'],
+                        local_project_id=values['db_pid'], local_sink=values['local_db'])
+                    wf = workflow.workflow_setup()
+                    if wf.list_node_names():
+                        workflow.runner(wf, cores=int(values['cores']))
     
     print('Done!')
 
