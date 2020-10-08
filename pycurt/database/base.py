@@ -103,7 +103,6 @@ class BaseDatabase():
         if ref_session:
             reference = True
         else:
-            print('NO REFERENCE CT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             reference = False
     
         if t10_session:

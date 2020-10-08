@@ -99,10 +99,15 @@ def dcm_info(dcm_folder):
     InstanceNums = []
     for dcm in dicoms:
         #Check whether the dicom is compressed, if yes decompress
-        if (pydicom.read_file(str(dcm)).file_meta.TransferSyntaxUID
-                not in NotCompressedPixelTransferSyntaxes):
-            decompress_dicom(dcm)
         try:
+            if (pydicom.read_file(str(dcm)).file_meta.TransferSyntaxUID
+                    not in NotCompressedPixelTransferSyntaxes):
+                decompress_dicom(dcm)
+#         except InvalidDicomError:
+#             print ('{} seems to do not have a readable DICOM header and '
+#                    'will be removed from the folder'.format(dcm))
+#             toRemove.append(dcm)
+#         try:
             header = pydicom.read_file(str(dcm))
             ImageTypes.append(tuple(header.ImageType))
             SeriesNums.append(header.SeriesNumber)
@@ -147,10 +152,13 @@ def dcm_check(dicoms, im_types, series_nums):
         list of DICOMS files
     """
     if len(im_types) > 1:
-        im_type = list([x for x in im_types if not 'PROJECTION IMAGE' in x
-                        and 'LOCALIZER' not in x][0])
-
-        dcms = [x for x in dicoms if pydicom.read_file(str(x)).ImageType==im_type]
+        try:
+            im_type = list([x for x in im_types if not 'PROJECTION IMAGE' in x
+                            and 'LOCALIZER' not in x][0])
+    
+            dcms = [x for x in dicoms if pydicom.read_file(str(x)).ImageType==im_type]
+        except IndexError:
+            dcms = []
     elif len(series_nums) > 1:
         series_num = np.max(series_nums)
         dcms = [x for x in dicoms if pydicom.read_file(str(x)).SeriesNumber==series_num]

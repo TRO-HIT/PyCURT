@@ -45,6 +45,10 @@ def main():
     PARSER.add_argument('--extract-rts', action='store_true', 
                         help='Whether or not to extract structures from the RT structure'
                            ' set. Default is False.')
+    PARSER.add_argument('--select-rts', action='store_true', 
+                        help=('Whether or not to extract only the structure, within the RTStruct, '
+                              'with the highest overlap with the dose distribution.'
+                              ' Default is False.'))
     PARSER.add_argument('--local-sink', action='store_true', 
                         help=('Whether or not to save all the results in a common database. '
                               'If you enable this, the outputs from all the different workflows '
@@ -98,7 +102,7 @@ def main():
                 wd = os.path.join(ARGS.work_dir, 'workflows_output', 'DataCuration')
                 workflow = RadioTherapy(
                     sub_id=sub_id, input_dir=wd, work_dir=ARGS.work_dir,
-                    process_rt=True, roi_selection=False,
+                    process_rt=True, roi_selection=ARGS.select_rts,
                     local_basedir=ARGS.local_basedir,
                     local_project_id=ARGS.local_project_id, local_sink=ARGS.local_sink)
                 wf = workflow.workflow_setup()

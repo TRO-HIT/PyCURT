@@ -49,7 +49,7 @@ def main():
                 if os.path.isdir(os.path.join(wd, sub_id)):
                     workflow = RadioTherapy(
                         sub_id=sub_id, input_dir=wd, work_dir=values['work_dir'],
-                        process_rt=True, roi_selection=False,
+                        process_rt=True, roi_selection=values['select_roi'],
                         local_basedir=values['db_path'],
                         local_project_id=values['db_pid'], local_sink=values['local_db'])
                     wf = workflow.workflow_setup()
