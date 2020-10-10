@@ -60,10 +60,13 @@ class DataCuration(BaseWorkflow):
             workflow.connect(sort, 'mr_images', mrclass, 'mr_images')
             workflow.connect(mrclass, 'out_folder', mr_rt_merge, 'in1')
 
-        workflow.connect(rt_sorting, 'out_folder', mr_rt_merge, 'in2')
-        workflow.connect(mr_rt_merge, 'out', merging, 'input_list')
-        workflow.connect(merging, 'out_folder', datasink, '@rt_sorted')
-#         workflow.connect(rt_sorting, 'out_folder', datasink, '@rt_sorted')
+            workflow.connect(rt_sorting, 'out_folder', mr_rt_merge, 'in2')
+            workflow.connect(mr_rt_merge, 'out', merging, 'input_list')
+            workflow.connect(merging, 'out_folder', datasink, '@rt_sorted')
+        else:
+            workflow.connect(rt_sorting, 'out_folder', datasink, '@rt_sorted')
+            substitutions = [('_rt_sorting\d+/', '')]
+            datasink.inputs.regexp_substitutions = substitutions
         
         return workflow
 
