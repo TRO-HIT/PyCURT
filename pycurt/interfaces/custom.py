@@ -17,6 +17,9 @@ from pycurt.utils.torch import (
 from pycurt.utils.filemanip import create_move_toDir
 import json
 import pickle
+from datetime import datetime as dt
+from datetime import timedelta
+import numpy as np
 
 
 ExplicitVRLittleEndian = '1.2.840.10008.1.2.1'
@@ -60,22 +63,30 @@ class RTDataSorting(BaseInterface):
         input_tp_folder = list(set([x for x in glob.glob(input_dir+'/*/*')
                                     for y in glob.glob(x+'/*')
                                     for r in modality_list if r in y]))
-        other_tps = [x for r in other_modalities
-                     for x in glob.glob(input_dir+'/*/*/{}'.format(r))]
+#         other_tps = list(set([x for x in glob.glob(input_dir+'/*/*')
+#                               for y in glob.glob(x+'/*')
+#                             for r in modality_list if r not in y]))
+#         other_tps = [x for r in other_modalities
+#                      for x in glob.glob(input_dir+'/*/*/{}'.format(r))]
 
         for tp_folder in input_tp_folder:
             sub_name, tp = tp_folder.split('/')[-2:]
-            out_basedir = os.path.join(out_dir, sub_name, 'RT_'+tp)
+#             out_basedir = os.path.join(out_dir, sub_name, 'RT_'+tp)
+            out_basedir = os.path.join(out_dir, sub_name, tp+'_RT')
             print('Processing Sub: {0}, timepoint: {1}'.format(sub_name, tp))
 
             plan_name, rtstruct_instance, dose_cubes_instance = self.extract_plan(
                 os.path.join(tp_folder, 'RTPLAN'), os.path.join(out_basedir, 'RTPLAN'))
             if plan_name is None:
-                out_basedir = os.path.join(out_dir, sub_name, 'CT_'+tp)
+#                 out_basedir = os.path.join(out_dir, sub_name, 'CT_'+tp)
+                out_basedir = os.path.join(out_dir, sub_name, tp+'_CT')
                 if not os.path.isdir(out_basedir+'/CT'):
                     if os.path.isdir(tp_folder+'/CT'):
                         shutil.copytree(tp_folder+'/CT', out_basedir+'/CT')
+#                 session_dict['CT'].append([out_basedir, dt.strptime(tp, '%Y%m%d')])
                 continue
+#             else:
+#                 session_dict['RT'].append([out_basedir, dt.strptime(tp, '%Y%m%d')])
             if rtstruct_instance is not None:
                 ct_classInstance = self.extract_struct(os.path.join(tp_folder, 'RTSTRUCT'),
                                                        rtstruct_instance,
@@ -90,17 +101,17 @@ class RTDataSorting(BaseInterface):
             if dose_cubes_instance is not None:
                 self.extract_dose_cubes(os.path.join(tp_folder, 'RTDOSE'), dose_cubes_instance,
                                         os.path.join(out_basedir, 'RTDOSE'))
-        for tp_folder in other_tps:
-            sub_name, tp = tp_folder.split('/')[-3:-1]
-            out_basedir = os.path.join(out_dir, sub_name, tp)
-            if not os.path.isdir(out_basedir):
-                os.makedirs(out_basedir)
-            scan_folders = glob.glob(tp_folder+'/*')
-            [shutil.copytree(x, os.path.join(out_basedir, x.split('/')[-1]))
-             for x in scan_folders]
+#         for tp_folder in other_tps:
+#             sub_name, tp = tp_folder.split('/')[-3:-1]
+#             out_basedir = os.path.join(out_dir, sub_name, tp)
+#             if not os.path.isdir(out_basedir):
+#                 os.makedirs(out_basedir)
+#             scan_folders = [x for x in glob.glob(tp_folder+'/*') if os.path.isdir(x)]
+#             [shutil.copytree(x, os.path.join(out_basedir, x.split('/')[-1]))
+#              for x in scan_folders]
+#             session_dict['MR'].append([out_basedir, dt.strptime(tp, '%Y%m%d')])
 
         return runtime
-
 
     def extract_plan(self, dir_name, out_dir):
     

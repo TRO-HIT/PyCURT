@@ -18,6 +18,8 @@ from nipype.interfaces.base import isdefined
 from pycurt.converters.dicom import DicomConverter
 from . import logging
 import SimpleITK as sitk
+from datetime import datetime as dt
+from datetime import timedelta
 
 
 iflogger = logging.getLogger('nipype.interface')
@@ -663,6 +665,11 @@ class FolderMerge(BaseInterface):
         input_list = self.inputs.input_list
         out_dir = os.path.abspath(self.inputs.out_folder)
         
+        session_dict = {}
+        session_dict['RT'] = []
+        session_dict['CT'] = []
+        session_dict['MR'] = []
+
         for directories in input_list:
             mr_dir = directories[0]
             rt_dir = directories[1]
@@ -697,9 +704,116 @@ class FolderMerge(BaseInterface):
                 for folder in mr_tocopy+rt_tocopy:
                     folder_name = folder.split('/')[-1]
                     shutil.copytree(folder, os.path.join(
-                        out_dir, sub_name,folder_name))
+                        out_dir, sub_name, folder_name))
+                    if folder in mr_tocopy:
+                        session_dict['MR'].append([os.path.join(
+                            out_dir, sub_name, folder_name),
+                            dt.strptime(folder_name, '%Y%m%d')])
+                    else:
+                        if '_CT' in folder:
+                            session_dict['CT'].append([os.path.join(
+                            out_dir, sub_name,folder_name),
+                            dt.strptime(folder_name.split('_CT')[0], '%Y%m%d')])
+                        elif '_RT' in folder:
+                            session_dict['RT'].append([os.path.join(
+                            out_dir, sub_name,folder_name),
+                            dt.strptime(folder_name.split('_RT')[0], '%Y%m%d')])
+
+        self.session_labelling(session_dict)
 
         return runtime
+
+    def session_labelling(self, session_dict):
+        
+        rt_sessions = sorted(session_dict['RT'])
+        ct_sessions = sorted(session_dict['CT'])
+        mr_sessions = sorted(session_dict['MR'])
+        toremove = []
+        if len(rt_sessions) > 1:
+            rt_ref = rt_sessions[0]
+            for i, rt_session in enumerate(rt_sessions[1:]):
+                diff = (rt_session[1]-rt_ref[1]).days
+                if diff <= 42:
+                    toremove.append(rt_session)
+                    ct_sessions.append(rt_session)
+                else:
+                    rt_ref = rt_session
+        for f in toremove:
+            rt_sessions.remove(f)
+        
+        mr_sessions_groups = []
+        ct_sessions_groups = []
+        if len(rt_sessions) > 1:
+            for i in range(len(rt_sessions)-1):
+                mr_sessions_groups.append(
+                    [x for x in mr_sessions 
+                     if x[1] <= (rt_sessions[i+1][1]-timedelta(days=30))])
+                [mr_sessions.remove(x) for x in mr_sessions_groups[-1]]
+                ct_sessions_groups.append(
+                    [x for x in ct_sessions 
+                     if x[1] <= (rt_sessions[i+1][1]-timedelta(days=30))])
+                [ct_sessions.remove(x) for x in ct_sessions_groups[-1]]
+            mr_sessions_groups.append(mr_sessions)
+            ct_sessions_groups.append(ct_sessions)
+        elif len(rt_sessions) == 1:
+            mr_sessions_groups.append(mr_sessions)
+            ct_sessions_groups.append(ct_sessions)
+        
+        for i, rt in enumerate(rt_sessions):
+            mris = mr_sessions_groups[i]
+            cts = ct_sessions_groups[i]
+            _, rt_date = rt
+            if mris:
+                mrtp = None
+                diff = np.inf
+                found = False
+                for mr in mris:
+                    mr_path, mr_date = mr
+                    if mr_date <= rt_date and (rt_date - mr_date).days <= diff:
+                        mrtp = mr
+                        diff = (rt_date - mr_date).days
+                        found = True
+                    elif mr_date > rt_date and (mr_date-rt_date).days <= 15 and not found:
+                        mrtp = mr
+                if mrtp is not None:
+                    shutil.move(mrtp[0], mrtp[0]+'_MR-RT')
+                    mris.remove(mrtp)
+                for mr in mris:
+                    mr_path, mr_date = mr
+                    if mr_date < rt_date:
+                        shutil.move(mr_path, mr_path+'_pre-RT')
+                    elif mr_date > rt_date and mr_date <= rt_date+timedelta(days=42):
+                        shutil.move(mr_path, mr_path+'_post-RT')
+                    elif mr_date > rt_date+timedelta(days=42):
+                        shutil.move(mr_path, mr_path+'_FU')
+            if cts:
+                for ct in cts:
+                    ct_path, ct_date = ct
+                    ct_outpath = ct_path.split('_CT')[0]
+                    if ct_date < rt_date:
+                        try:
+                            shutil.move(ct_path, ct_outpath+'_pre-RT')
+                        except:
+                            ff = sorted(glob.glob(ct_path+'/*'))
+                            for f in ff:
+                                fname = f.split('/')[-1]
+                                shutil.move(f, ct_outpath+'_pre-RT'+'/{}'.format(fname))
+                    elif ct_date > rt_date and ct_date <= rt_date+timedelta(days=42):
+                        try:
+                            shutil.move(ct_path, ct_outpath+'_post-RT')
+                        except:
+                            ff = sorted(glob.glob(ct_path+'/*'))
+                            for f in ff:
+                                fname = f.split('/')[-1]
+                                shutil.move(f, ct_outpath+'_post-RT'+'/{}'.format(fname))
+                    elif ct_date > rt_date+timedelta(days=42):
+                        try:
+                            shutil.move(ct_path, ct_outpath+'_FU')    
+                        except:
+                            ff = sorted(glob.glob(ct_path+'/*'))
+                            for f in ff:
+                                fname = f.split('/')[-1]
+                                shutil.move(f, ct_outpath+'_FU'+'/{}'.format(fname))            
 
     def _list_outputs(self):
         outputs = self._outputs().get()
