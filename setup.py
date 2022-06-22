@@ -13,7 +13,7 @@ setup(name='PyCURT',
       install_requires=[
       'matplotlib==3.0.2',
       'nibabel==2.3.3',
-      'numpy==1.16.0',
+      'numpy==1.22.0',
       'pandas==0.24.0',
       'pydicom==1.2.2',
       'pynrrd==0.3.6',
