@@ -5,7 +5,7 @@ import re
 import pydicom as pd
 import requests
 import tarfile
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import sys
 import pickle
 

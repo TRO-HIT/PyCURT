@@ -7,7 +7,7 @@ After that, imaging data can be converted to Nifti, which is a format often used
 Finally, you have the option to create a local database where all the outputs are saved in a consistent and easy-to-handle way.
 
 # Installation
-PyCURT supports only Python>3.5 and it has been tested only on Linux (Ubuntu) platforms.
+PyCURT supports only Python>3.9 and it has been tested only on Linux (Ubuntu) platforms.
 We very strongly recommend you install PyCURT in a virtual environment. [Here is a quick how-to for Ubuntu](https://linoxide.com/linux-how-to/setup-python-virtual-environment-ubuntu/). [Conda enviroments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) can also be used.
 Before installing PyCURT, there are two external tools that need to be installed:
 1. [dcm2niix](https://github.com/rordenlab/dcm2niix/releases/tag/v1.0.20200331) which is required to convert imaging data from DICOM to Nifti. Following the link, you will be prompted to download the pre-compiled version (choose Linux os).
@@ -16,8 +16,8 @@ Before installing PyCURT, there are two external tools that need to be installed
 Once those two tools are installed, you can install PyCURT. You can do it by typing the following few steps in a terminal:
 1. Clone this repository, `git clone https://github.com/TRO-HIT/PyCURT.git`.
 2. cd into the cloned directory, `cd PyCURT`.
-3. Create a virtual (or conda) environment. With anaconda you can do it by typing `conda create -n pycurt python=3.7`.
+3. Create a virtual (or conda) environment. With anaconda you can do it by typing `conda create -n pycurt python=3.9`.
 4. Activate conda environment, `conda activate pycurt`.
-5. Install PyCURT by typing `python setup.py install`
+5. Install PyCURT by typing `python -m pip install .`
 
 Last step will create two commands, `pycurt` and `pycurt_gui`. The first one can be used to run PyCURT from command line, the second one will open a graphical user interface that can be used to configure PyCURT.
